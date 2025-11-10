@@ -1,67 +1,111 @@
-from flask import Flask
-from flask import render_template, session, make_response, request
+from flask import Flask, session
+from flask import render_template, render_template_string, make_response, request, redirect, url_for
 import random as rnd
 import math
+import os
+
 
 app = Flask(__name__)
-# Сделать хранение данных в сессии
+app.secret_key = os.urandom(30).hex()
 
-start_range = 1
-end_range = 120
-count = math.ceil(math.log2(end_range - start_range + 1))
-maxCount = count
-rnd_num = rnd.randint(start_range, end_range)
-history_numbers = []
+# Константы диапазона
+START_RANGE = 1
+END_RANGE = 120
+
+
+def initialize_session():
+    session['count'] = math.ceil(math.log2(END_RANGE - START_RANGE + 1))
+    session['max_count'] = session['count']
+    session['rnd_num'] = rnd.randint(START_RANGE, END_RANGE)
+    session['history_numbers'] = []
 
 
 @app.route("/")
 def main():
-    global count, start_range, end_range, rnd_num, history_numbers, maxCount
-    return render_template("start_game.html", start_range=start_range, end_range=end_range, count=count, history_numbers=history_numbers, rnd_num=rnd_num, maxCount=maxCount, error="")
+    if 'rnd_num' not in session:
+        initialize_session()
+
+    return render_template(
+        "start_game.html",
+        start_range=START_RANGE,
+        end_range=END_RANGE,
+        count=session['count'],
+        history_numbers=session['history_numbers'],
+        maxCount=session['max_count'],
+        rnd_num=session['rnd_num'],
+        error=""
+    )
 
 
 @app.route("/check", methods=['POST'])
 def check():
-    # брать переменную из сессии
-    global count, rnd_num, history_numbers
-    count -= 1
-    number = request.form['enter__number']
-    if count == 0:
-        history_numbers = []
-        return end_game()
-    try:
-        if number != "":
-            history_numbers.append(int(number))
-            if int(number) == rnd_num:
-                history_numbers = []
-                return win_game()
-        elif request.form['new_game'] == "" and number == "":
-            return new_game()
-    except:
-        return main()
-    return main()
+    if 'rnd_num' not in session:
+        return redirect(url_for('main'))
+
+    if 'enter__number' in request.form:
+        number = request.form['enter__number']
+        if number.isdigit():
+            number = int(number)
+            session['history_numbers'].append(number)
+            session['count'] -= 1
+
+            if number == session['rnd_num']:
+                return status_game()
+
+            if session['count'] <= 0:
+                return status_game()
+
+    # Обработка новой игры
+    elif 'new_game' in request.form:
+        return new_game()
+
+    # Сохраняем изменения в сессии
+    session.modified = True
+    return render_template(
+        "start_game.html",
+        start_range=START_RANGE,
+        end_range=END_RANGE,
+        count=session['count'],
+        history_numbers=session['history_numbers'],
+        maxCount=session['max_count'],
+        rnd_num=session['rnd_num'],
+        error=""
+    )
 
 
-@app.route("/end_game", methods=['GET'])
-def end_game():
-    global rnd_num
-    return render_template("end_game.html", rnd_num=rnd_num)
-
-
-@app.route("/new_game", methods=['GET'])
+@app.route("/new_game")
 def new_game():
-    global count, start_range, end_range, rnd_num, history_numbers
-    count = math.ceil(math.log2(end_range - start_range + 1))
-    rnd_num = rnd.randint(start_range, end_range)
-    history_numbers = []
-    print(rnd_num)
-    return main()
+    initialize_session()
+    return redirect(url_for('main'))
 
 
-@app.route("/win_game",)
-def win_game():
-    global rnd_num
-    return render_template("win_game.html", rnd_num=rnd_num)
+@app.route("/win_game")
+def status_game():
+    if 'rnd_num' not in session:
+        return redirect(url_for('main'))
+
+    rnd_num = session['rnd_num']
+    count = session['count']
+    session.clear()
+    return render_template("status_game.html", rnd_num=rnd_num, count=count)
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template_string("""{% extends 'base.html' %} {% block body %}
+<main>
+  <h1 class="main__title">Вы сбились с пути</h1>
+  <div class="table end__game__btn">
+  <a href="{{url_for("main")}}">
+  <button type="submit" class="btn btn-primary restart__btn">
+        Вернуться назад
+      </button>
+  </a>
+    
+  </div>
+</main>
+{% endblock %}
+"""), 404
 
 
 if __name__ == "__main__":

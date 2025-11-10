@@ -3,7 +3,8 @@
   <h1 class="main__title">Угадай число</h1>
   <div class="table">
     <div class="subtitle">
-      Вы проиграли, загаданное число было: {{ rnd_num }}
+      Вы {% if count <= 0 %} проиграли{% else %} победили {% endif %},
+      загаданное число было: {{rnd_num}}
     </div>
     <form action="/new_game" method="get">
       <button type="submit" class="btn btn-primary restart__btn">
@@ -12,15 +13,4 @@
     </form>
   </div>
 </main>
-{% endblock %} {% block script %}
-
-<script>
-  const bodyElement = document.querySelector("body");
-  bodyElement.addEventListener("keyup", (event) => {
-    console.log("Tap")
-    if (event.code === "Escape") {
-      location.reload();
-    }
-  });
-</script>
 {% endblock %}
