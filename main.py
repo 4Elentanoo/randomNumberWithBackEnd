@@ -18,8 +18,10 @@ def initialize_session():
     session['max_count'] = session['count']
     session['rnd_num'] = rnd.randint(START_RANGE, END_RANGE)
     session['history_numbers'] = []
+    session['error'] = ""
 
 
+#  в один метод сделать гет и пост
 @app.route("/")
 def main():
     if 'rnd_num' not in session:
@@ -33,10 +35,10 @@ def main():
         history_numbers=session['history_numbers'],
         maxCount=session['max_count'],
         rnd_num=session['rnd_num'],
-        error=""
+        error=session['error'],
     )
 
-
+# убрать 
 @app.route("/check", methods=['POST'])
 def check():
     if 'rnd_num' not in session:
@@ -46,14 +48,20 @@ def check():
         number = request.form['enter__number']
         if number.isdigit():
             number = int(number)
-            session['history_numbers'].append(number)
-            session['count'] -= 1
+            if END_RANGE < number or START_RANGE > number:
+                session['error'] = "Число вне диапазона"
+            else:
+                session['history_numbers'].append(number)
+                session['count'] -= 1
+                session['error'] = ""
 
             if number == session['rnd_num']:
                 return status_game()
 
             if session['count'] <= 0:
                 return status_game()
+        else:
+            session['error'] = "Число отрицательно"
 
     # Обработка новой игры
     elif 'new_game' in request.form:
@@ -69,7 +77,7 @@ def check():
         history_numbers=session['history_numbers'],
         maxCount=session['max_count'],
         rnd_num=session['rnd_num'],
-        error=""
+        error=session['error']
     )
 
 

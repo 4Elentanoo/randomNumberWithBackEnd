@@ -21,10 +21,10 @@
           aria-describedby="inputGroup-sizing-sm"
         />
       </div>
-      {% if history_numbers %}
+      <!-- {% if history_numbers %} -->
 
-      <div class="error__msg">Ошибка валидации</div>
-      {% endif %}
+      <div class="error__msg">{{ error }}</div>
+      <!-- {% endif %} -->
       <div class="list__buttons">
         <button
           type="submit"
