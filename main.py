@@ -10,7 +10,7 @@ app.secret_key = os.urandom(30).hex()
 
 # Константы диапазона
 START_RANGE = 1
-END_RANGE = 120
+END_RANGE = 200
 
 
 def initialize_session():
@@ -19,13 +19,45 @@ def initialize_session():
     session['rnd_num'] = rnd.randint(START_RANGE, END_RANGE)
     session['history_numbers'] = []
     session['error'] = ""
+    print(session['rnd_num'])
 
 
-#  в один метод сделать гет и пост
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def main():
     if 'rnd_num' not in session:
         initialize_session()
+
+    if request.method == "POST":
+        if 'rnd_num' not in session:
+            return redirect(url_for('main'))
+
+        if 'enter__number' in request.form:
+            number = request.form['enter__number']
+            if number == '':
+                session['error'] = "Отсутствует число"
+            else:
+                if number.isdigit():
+                    number = int(number)
+                    if END_RANGE < number or START_RANGE > number:
+                        session['error'] = "Число вне диапазона"
+                    else:
+                        session['history_numbers'].append(number)
+                        session['count'] -= 1
+                        session['error'] = ""
+
+                    if number == session['rnd_num']:
+                        return status_game()
+
+                    if session['count'] <= 0:
+                        return status_game()
+                else:
+                    session['error'] = "Число отрицательно"
+        # Обработка новой игры
+        if 'new__game' in request.form:
+            return new_game()
+
+        # Сохраняем изменения в сессии
+        session.modified = True
 
     return render_template(
         "start_game.html",
@@ -36,48 +68,6 @@ def main():
         maxCount=session['max_count'],
         rnd_num=session['rnd_num'],
         error=session['error'],
-    )
-
-# убрать 
-@app.route("/check", methods=['POST'])
-def check():
-    if 'rnd_num' not in session:
-        return redirect(url_for('main'))
-
-    if 'enter__number' in request.form:
-        number = request.form['enter__number']
-        if number.isdigit():
-            number = int(number)
-            if END_RANGE < number or START_RANGE > number:
-                session['error'] = "Число вне диапазона"
-            else:
-                session['history_numbers'].append(number)
-                session['count'] -= 1
-                session['error'] = ""
-
-            if number == session['rnd_num']:
-                return status_game()
-
-            if session['count'] <= 0:
-                return status_game()
-        else:
-            session['error'] = "Число отрицательно"
-
-    # Обработка новой игры
-    elif 'new_game' in request.form:
-        return new_game()
-
-    # Сохраняем изменения в сессии
-    session.modified = True
-    return render_template(
-        "start_game.html",
-        start_range=START_RANGE,
-        end_range=END_RANGE,
-        count=session['count'],
-        history_numbers=session['history_numbers'],
-        maxCount=session['max_count'],
-        rnd_num=session['rnd_num'],
-        error=session['error']
     )
 
 

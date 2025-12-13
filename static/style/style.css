@@ -141,9 +141,7 @@ main {
 }
 
 .error__msg {
-  /* display: none; */
   text-align: center;
-  margin: 10px 0px 10px 0;
   color: red;
 }
 
@@ -153,18 +151,17 @@ main {
 }
 
 .list__buttons button {
-  /* display: none; */
   background-color: #0d6efd;
   border-color: transparent;
 }
 
-/* form {
+form {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-} */
+}
 
-.end__game__btn{
+.end__game__btn {
   display: flex;
   justify-content: space-around;
 }

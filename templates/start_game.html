@@ -3,10 +3,10 @@
   <h1 class="main__title">Угадай число</h1>
   <div class="table">
     <div class="subtitle">
-      Компьютер загадал число от {{ start_range }} до {{
-      end_range }} Ваша задача его угадать.
+      Компьютер загадал число от {{ start_range }} до {{ end_range }} Ваша
+      задача его угадать.
     </div>
-    <form action="/check" method="post">
+    <form action="/" method="post">
       <div class="input-group input-group-sm mb-3">
         <span class="input-group-text" id="inputGroup-sizing-sm"
           >Ваше число:</span
@@ -21,20 +21,16 @@
           aria-describedby="inputGroup-sizing-sm"
         />
       </div>
-      <!-- {% if history_numbers %} -->
 
-      <div class="error__msg">{{ error }}</div>
-      <!-- {% endif %} -->
+      <p class="error__msg">{% if error %} {{ error }} {% endif %}</p>
+
       <div class="list__buttons">
+        <button type="submit" class="btn btn-primary check__btn">
+          Проверить
+        </button>
         <button
           type="submit"
-          name="check_value"
-          class="btn btn-primary check__btn"
-        >
-          Проверить</button
-        ><button
-          type="submit"
-          name="new_game"
+          name="new__game"
           class="btn btn-primary new__number__btn"
         >
           Загадать новое число
