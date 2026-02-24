@@ -19,6 +19,7 @@ def initialize_session():
     session['rnd_num'] = rnd.randint(START_RANGE, END_RANGE)
     session['history_numbers'] = []
     session['error'] = ""
+    session['message'] = ""
     print(session['rnd_num'])
 
 
@@ -28,9 +29,6 @@ def main():
         initialize_session()
 
     if request.method == "POST":
-        if 'rnd_num' not in session:
-            return redirect(url_for('main'))
-
         if 'enter__number' in request.form:
             number = request.form['enter__number']
             if number == '':
@@ -45,20 +43,28 @@ def main():
                         session['count'] -= 1
                         session['error'] = ""
 
-                    if number == session['rnd_num']:
-                        return status_game()
+                        if number == session['rnd_num']:
+                            session['message'] = "Поздравляем! Вы угадали число!"
+                            # Перенаправляем на страницу результата
+                            return redirect(url_for('status_game'))
+                        elif number < session['rnd_num']:
+                            session['message'] = f"Загаданное число больше {number}"
+                        else:
+                            session['message'] = f"Загаданное число меньше {number}"
 
-                    if session['count'] <= 0:
-                        return status_game()
+                        if session['count'] <= 0:
+                            session['message'] = "К сожалению, попытки закончились!"
+                            return redirect(url_for('status_game'))
                 else:
-                    session['error'] = "Число отрицательно"
-        # Обработка новой игры
+                    session['error'] = "Число должно быть положительным"
+
+            session.modified = True
+            return redirect(url_for('main'))
+
         if 'new__game' in request.form:
-            return new_game()
+            return redirect(url_for('new_game'))
 
-        # Сохраняем изменения в сессии
-        session.modified = True
-
+    # GET запрос - просто отображаем страницу
     return render_template(
         "start_game.html",
         start_range=START_RANGE,
@@ -68,6 +74,7 @@ def main():
         maxCount=session['max_count'],
         rnd_num=session['rnd_num'],
         error=session['error'],
+        message=session.get('message', '')
     )
 
 
@@ -77,15 +84,24 @@ def new_game():
     return redirect(url_for('main'))
 
 
-@app.route("/win_game")
+@app.route("/status_game")
 def status_game():
     if 'rnd_num' not in session:
         return redirect(url_for('main'))
 
     rnd_num = session['rnd_num']
-    count = session['count']
+    # Количество использованных попыток
+    count = session['max_count'] - session['count']
+    message = session.get('message', '')
+
+    session_data = {
+        'rnd_num': rnd_num,
+        'used_attempts': count,
+        'message': message
+    }
     session.clear()
-    return render_template("status_game.html", rnd_num=rnd_num, count=count)
+
+    return render_template("status_game.html", **session_data)
 
 
 @app.errorhandler(404)
